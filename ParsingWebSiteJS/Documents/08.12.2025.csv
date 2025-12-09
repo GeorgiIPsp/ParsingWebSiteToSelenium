@@ -1,0 +1,6 @@
+Trade Date	Trade Type	Short Name	Future Expiry	Strike	Call/Put	Quantity	Vol	Premium	Futures Price
+12/08/2025 12:12:07	Delta Option Trade	WMAZ	Mar26	4200	C	1	29	3820	3644.2
+12/08/2025 11:59:29	Delta Option Trade	SOYB	May26	6360	P	3	16.75	9000	6860
+12/08/2025 11:59:15	Delta Option Trade	SOYB	May26	6860	P	3	17.73	29600	6860
+12/08/2025 11:03:45	Delta Option Trade	SOYB	Mar26	7200	P	100	14	36829	6901
+12/08/2025 11:03:45	Delta Option Trade	SOYB	Mar26	6900	P	100	14.5	18281	6901
