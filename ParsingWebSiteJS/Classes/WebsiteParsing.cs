@@ -22,6 +22,7 @@ namespace ParsingWebSite.Classes
             try
             {
                 ChromeOptions options = new ChromeOptions();
+                // Нужно для того, чтобы не открывалось окно браузераа
                 options.AddArgument("--headless");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Window.Maximize();
@@ -55,9 +56,11 @@ namespace ParsingWebSite.Classes
                 string urls = "https://clientportal.jse.co.za/reports/delta-option-and-structured-option-trades";
                 driver.Navigate().GoToUrl(urls);
                 log.Info($"Переход на страницу {urls}");
+                // Нужно для того, чтобы успели загрузиться данные на сайте, так как они загружаются динамически, а не хранятся на сайте
                 WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
                 IWebElement table = driver.FindElement(By.XPath("//table[@id='tableTrades']"));
                 
+                // Для поиска заголовка
                 var cols = table.FindElements(By.TagName("th"));
 
                 log.Debug("Инициализация списка данных");
@@ -77,8 +80,9 @@ namespace ParsingWebSite.Classes
                     log.Warn("Заголовки таблицы не найдены");
                 }
 
+                // Для поиска строчек
                 var dataRows = table.FindElements(By.XPath(".//tr/td"));
-
+                bool dataTrue = false;
                 if (dataRows.Count > 0)
                 {
                     foreach (IWebElement row in dataRows)
@@ -86,6 +90,7 @@ namespace ParsingWebSite.Classes
                         if (!string.IsNullOrEmpty(row.Text))
                         {
                             dataLinks.Add(row.Text);
+                            dataTrue = true;
                         }
                     }
                 }
@@ -98,8 +103,18 @@ namespace ParsingWebSite.Classes
                 log.Debug("Начало экспорта данных в CSV");
                 try
                 {
-                    WorkingWithCSVFile.ExportToCSV(dataLinks, countCol);
-                    log.Info("Данные успешно получены и экспортированы");
+
+                    
+                    if (dataTrue)
+                    {
+                        // Запуск метода из другого класса для сохранения результата в csv файл
+                        WorkingWithCSVFile.ExportToCSV(dataLinks, countCol);
+                        log.Info("Данные успешно получены и экспортированы");
+                    }
+                    else
+                    {
+                        log.Info("Данных нет, поэтому создание файла csv прервано!");
+                    }
                 }
                 catch (Exception ex)
                 {
