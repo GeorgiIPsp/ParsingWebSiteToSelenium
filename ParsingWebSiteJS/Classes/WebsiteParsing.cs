@@ -12,6 +12,7 @@ namespace ParsingWebSite.Classes
     internal static class WebsiteParsing
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+
         /// <summary>
         /// Метод для создания веб-драйвера
         /// </summary>
@@ -19,23 +20,28 @@ namespace ParsingWebSite.Classes
         /// <exception cref="Exception"></exception>
         static IWebDriver CreateDriver()
         {
+            log.Info("Создание драйвера Chrome");
+
             try
             {
                 ChromeOptions options = new ChromeOptions();
-                // Нужно для того, чтобы не открывалось окно браузераа
+                log.Debug("ChromeOptions: headless режим");
                 options.AddArgument("--headless");
+
+                log.Info("Инициализация ChromeDriver");
                 IWebDriver driver = new ChromeDriver(options);
+
                 driver.Manage().Window.Maximize();
+
                 Console.WriteLine("Selenium WebDriver для Chrome успешно инициализирован");
-                log.Info("Selenium WebDriver для Chrome успешно инициализирован");
+                log.Info("ChromeDriver успешно инициализирован");
                 return driver;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Проверьте установлен ли у вас браузер Chrome и проверьте установлена ли у вас вресия бразуера 143.0.7499.41. Подробнее об ошибке: " + ex);
-                log.Error("Ошибка при создании драйвера Chrome", ex);
-                throw new Exception("Проверьте установлен ли у вас браузер Chrome и проверьте установлена ли у вас вресия бразуера 143.0.7499.41. Подробнее об ошибке: ", ex);
-
+                log.Error($"Ошибка создания ChromeDriver. Детали: {ex.Message}");
+                Console.WriteLine($"Ошибка создания ChromeDriver: {ex.Message}");
+                throw new Exception("Проверьте установлен ли у вас браузер Chrome и проверьте установлена ли у вас версия браузера 143.0.7499.41.", ex);
             }
         }
 
@@ -47,44 +53,54 @@ namespace ParsingWebSite.Classes
         public static List<string> parsinWebSiteToSelenium()
         {
             IWebDriver driver = null;
+            log.Info("Запуск парсинга с использованием Selenium");
+            string urls = "https://clientportal.jse.co.za/reports/delta-option-and-structured-option-trades";
             try
             {
-                log.Info("Создание драйвера Chrome");
                 driver = CreateDriver();
-                log.Info("Установлен драйвер Chrome");
-                Console.WriteLine("Ожидание загрузки данных на странице. Примерно 15-30 секунд...");
-                string urls = "https://clientportal.jse.co.za/reports/delta-option-and-structured-option-trades";
-                driver.Navigate().GoToUrl(urls);
-                log.Info($"Переход на страницу {urls}");
-                // Нужно для того, чтобы успели загрузиться данные на сайте, так как они загружаются динамически, а не хранятся на сайте
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
-                IWebElement table = driver.FindElement(By.XPath("//table[@id='tableTrades']"));
-                
-                // Для поиска заголовка
-                var cols = table.FindElements(By.TagName("th"));
+                log.Info("Драйвер Chrome установлен");
 
-                log.Debug("Инициализация списка данных");
+                
+                log.Info($"Переход на страницу: {urls}");
+
+                Console.WriteLine("Ожидание загрузки данных на странице. Примерно 15-30 секунд...");
+                driver.Navigate().GoToUrl(urls);
+
+                log.Info($"Страница загружена: {urls}");
+
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
+                log.Debug("Ожидание загрузки таблицы (таймаут 15 сек)");
+
+                IWebElement table = driver.FindElement(By.XPath("//table[@id='tableTrades']"));
+                log.Info("Таблица tableTrades найдена");
+
+                var cols = table.FindElements(By.TagName("th"));
+                log.Debug($"Найдено элементов th: {cols.Count}");
+
                 List<string> dataLinks = new List<string>();
                 int countCol = cols.Count;
 
                 if (cols.Count() > 0)
                 {
+                    log.Info($"Сбор заголовков таблицы: {cols.Count} колонок");
                     foreach (IWebElement col in cols)
                     {
                         dataLinks.Add(col.Text);
                     }
-                    log.Info($"Найдено {cols.Count} заголовков таблицы");
+                    log.Info("Заголовки таблицы собраны");
                 }
                 else
                 {
                     log.Warn("Заголовки таблицы не найдены");
                 }
 
-                // Для поиска строчек
                 var dataRows = table.FindElements(By.XPath(".//tr/td"));
+                log.Debug($"Найдено элементов данных td: {dataRows.Count}");
+
                 bool dataTrue = false;
                 if (dataRows.Count > 0)
                 {
+                    log.Info($"Сбор данных из таблицы: {dataRows.Count} элементов");
                     foreach (IWebElement row in dataRows)
                     {
                         if (!string.IsNullOrEmpty(row.Text))
@@ -93,41 +109,42 @@ namespace ParsingWebSite.Classes
                             dataTrue = true;
                         }
                     }
+                    log.Info("Данные из таблицы собраны");
                 }
                 else
                 {
+                    log.Warn("Данные в таблице отсутствуют");
                     Console.WriteLine("Данных в таблице о сделках отсутствуют");
-                    log.Warn("Данные в таблице о сделках отсутствуют");
                 }
 
-                log.Debug("Начало экспорта данных в CSV");
-                try
+                if (dataTrue)
                 {
-
-                    
-                    if (dataTrue)
-                    {
-                        // Запуск метода из другого класса для сохранения результата в csv файл
-                        WorkingWithCSVFile.ExportToCSV(dataLinks, countCol);
-                        log.Info("Данные успешно получены и экспортированы");
-                    }
-                    else
-                    {
-                        log.Info("Данных нет, поэтому создание файла csv прервано!");
-                    }
+                    log.Info($"Экспорт данных в CSV. Элементов: {dataLinks.Count}, Колонок: {countCol}");
+                    WorkingWithCSVFile.ExportToCSV(dataLinks, countCol);
+                    log.Info("Данные успешно экспортированы в CSV");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine("Ошибка при экспорте в CSV. Продробнее: ", ex);
-                    log.Error("Ошибка при экспорте данных в CSV", ex);
+                    log.Info("Нет данных для экспорта в CSV");
                 }
 
+                log.Info($"Парсинг завершен. Получено элементов: {dataLinks.Count}");
                 return dataLinks;
+            }
+            catch (WebDriverException ex)
+            {
+                log.Error($"Ошибка WebDriver при парсинге: {urls}", ex);
+                throw new Exception($"Ошибка WebDriver: {ex.Message}", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                log.Error($"Таймаут при ожидании элементов: {urls}", ex);
+                throw new Exception($"Таймаут ожидания: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                log.Error("Критическая ошибка при парсинге веб-сайта", ex);
-                throw new Exception("Ошибка при парсинге веб-сайта: ", ex);
+                log.Error($"Ошибка при парсинге сайта: {urls}", ex);
+                throw new Exception($"Ошибка парсинга: {ex.Message}", ex);
             }
             finally
             {
@@ -135,8 +152,9 @@ namespace ParsingWebSite.Classes
                 {
                     if (driver != null)
                     {
+                        log.Info("Закрытие драйвера Chrome");
                         driver.Quit();
-                        log.Info("Драйвер Chrome успешно закрыт");
+                        log.Info("Драйвер Chrome закрыт");
                     }
                 }
                 catch (Exception ex)

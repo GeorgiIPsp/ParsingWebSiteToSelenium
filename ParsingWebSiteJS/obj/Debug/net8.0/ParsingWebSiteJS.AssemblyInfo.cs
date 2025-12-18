@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ParsingWebSiteJS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12bef49bf85f0c8bc7f89ad9118daac31ef9d4fd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f50f212ff36718b9acd8b46853a69a81a05c93b9")]
 [assembly: System.Reflection.AssemblyProductAttribute("ParsingWebSiteJS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ParsingWebSiteJS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
